@@ -148,7 +148,7 @@ class Cities_Weather_Widget extends WP_Widget
   public function widget($args, $instance)
   {
     $city_id = !empty($instance['city_id']) ? $instance['city_id'] : '';
-    $api_key = 'YOUR_OPENWEATHERMAP_API_KEY'; // Замените на ваш API-ключ
+    $api_key = defined('OPENWEATHERMAP_API_KEY') ? OPENWEATHERMAP_API_KEY : '';
 
     if ($city_id) {
       $city_name = get_the_title($city_id);
