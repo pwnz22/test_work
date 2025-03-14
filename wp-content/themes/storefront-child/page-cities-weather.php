@@ -72,8 +72,22 @@ get_header(); ?>
 
 <script>
   jQuery(document).ready(function($) {
-    $("#search-city").on("keyup", function() {
-      var query = $(this).val();
+    // Функция дебаунс для уменьшения ненужных запросов
+    function debounce(func, delay) {
+      let timer;
+      return function() {
+        let context = this,
+          args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(context, args), delay);
+      };
+    }
+
+    // Функция поиска городов
+    function searchCities() {
+      let query = $("#search-city").val().trim();
+      if (query.length < 2) return; // Минимум 2 символа для запроса
+
       $.ajax({
         url: "<?php echo admin_url('admin-ajax.php'); ?>",
         type: "POST",
@@ -85,6 +99,8 @@ get_header(); ?>
           $("#cities-weather-table tbody").html(response);
         }
       });
-    })
+    }
+
+    $("#search-city").on("keyup", debounce(searchCities, 300)); // 300 мс задержка
   });
 </script>

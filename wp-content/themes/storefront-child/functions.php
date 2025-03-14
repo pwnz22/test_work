@@ -238,7 +238,7 @@ function register_cities_weather_widget()
 }
 add_action('widgets_init', 'register_cities_weather_widget');
 
-
+// Функция для получения погоды
 function get_city_weather($lat, $lon)
 {
   $api_key = defined('OPENWEATHERMAP_API_KEY') ? OPENWEATHERMAP_API_KEY : '';
@@ -264,3 +264,48 @@ function enqueue_custom_scripts()
   wp_enqueue_script('jquery');
 }
 add_action('wp_enqueue_scripts', 'enqueue_custom_scripts');
+
+// Формируем метод с фильтром по названию города
+function search_cities_ajax()
+{
+  global $wpdb;
+  $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
+
+  $sql = "
+      SELECT
+          p.ID,
+          p.post_title AS city_name,
+          t.name AS country_name,
+          pm_lat.meta_value AS latitude,
+          pm_lon.meta_value AS longitude
+      FROM {$wpdb->posts} p
+      LEFT JOIN {$wpdb->term_relationships} tr ON (p.ID = tr.object_id)
+      LEFT JOIN {$wpdb->term_taxonomy} tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id)
+      LEFT JOIN {$wpdb->terms} t ON (tt.term_id = t.term_id)
+      LEFT JOIN {$wpdb->postmeta} pm_lat ON (p.ID = pm_lat.post_id AND pm_lat.meta_key = '_city_latitude')
+      LEFT JOIN {$wpdb->postmeta} pm_lon ON (p.ID = pm_lon.post_id AND pm_lon.meta_key = '_city_longitude')
+      WHERE p.post_type = 'cities' AND p.post_status = 'publish' AND tt.taxonomy = 'countries'
+      AND p.post_title LIKE %s
+  ";
+
+  $cities = $wpdb->get_results($wpdb->prepare($sql, '%' . $query . '%'));
+
+  if ($cities) {
+    foreach ($cities as $city) {
+      $temperature = get_city_weather($city->latitude, $city->longitude);
+      echo "<tr>
+              <td>{$city->country_name}</td>
+              <td>{$city->city_name}</td>
+              <td>{$temperature}</td>
+          </tr>";
+    }
+  } else {
+    echo "<tr><td colspan='3'>Город не найден.</td></tr>";
+  }
+
+  wp_die();
+}
+
+// Регистрация action для авторизированных и неавторизированных пользователей
+add_action('wp_ajax_search_cities', 'search_cities_ajax');
+add_action('wp_ajax_nopriv_search_cities', 'search_cities_ajax');
