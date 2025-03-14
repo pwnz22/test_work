@@ -237,3 +237,23 @@ function register_cities_weather_widget()
   register_widget('Cities_Weather_Widget');
 }
 add_action('widgets_init', 'register_cities_weather_widget');
+
+
+function get_city_weather($lat, $lon)
+{
+  $api_key = defined('OPENWEATHERMAP_API_KEY') ? OPENWEATHERMAP_API_KEY : '';
+
+  if (!$api_key || !$lat || !$lon) {
+    return 'API ключ или координаты пустые.';
+  }
+
+  $api_url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$api_key";
+  $response = wp_remote_get($api_url);
+
+  if (is_wp_error($response)) {
+    return 'Ошибка...';
+  }
+
+  $data = json_decode(wp_remote_retrieve_body($response), true);
+  return isset($data['main']['temp']) ? round($data['main']['temp'], 1) . "°C" : 'Нет данных';
+}
