@@ -1,0 +1,9 @@
+/*
+Theme Name: Storefront Child
+Template: storefront
+Version: 1.0
+Author: Valijon
+Description: Дочерняя тема для Storefront
+*/
+
+@import url("../storefront/style.css"); /* Импорт стилей родительской темы */
