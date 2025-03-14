@@ -28,24 +28,25 @@ get_header(); ?>
       <?php
       global $wpdb;
 
-      // Получаем города, страны и координаты из базы
       $query = "
-                SELECT
-                    p.ID,
-                    p.post_title AS city_name,
-                    t.name AS country_name,
-                    pm_lat.meta_value AS latitude,
-                    pm_lon.meta_value AS longitude
-                FROM {$wpdb->posts} p
-                LEFT JOIN {$wpdb->term_relationships} tr ON (p.ID = tr.object_id)
-                LEFT JOIN {$wpdb->term_taxonomy} tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id)
-                LEFT JOIN {$wpdb->terms} t ON (tt.term_id = t.term_id)
-                LEFT JOIN {$wpdb->postmeta} pm_lat ON (p.ID = pm_lat.post_id AND pm_lat.meta_key = '_city_latitude')
-                LEFT JOIN {$wpdb->postmeta} pm_lon ON (p.ID = pm_lon.post_id AND pm_lon.meta_key = '_city_longitude')
-                WHERE p.post_type = 'cities' AND p.post_status = 'publish' AND tt.taxonomy = 'countries'
-            ";
+         SELECT
+             p.ID,
+             p.post_title AS city_name,
+             IFNULL(t.name, 'Без страны') AS country_name,
+             pm_lat.meta_value AS latitude,
+             pm_lon.meta_value AS longitude
+         FROM {$wpdb->posts} p
+         LEFT JOIN {$wpdb->term_relationships} tr ON (p.ID = tr.object_id)
+         LEFT JOIN {$wpdb->term_taxonomy} tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'countries')
+         LEFT JOIN {$wpdb->terms} t ON (tt.term_id = t.term_id)
+         LEFT JOIN {$wpdb->postmeta} pm_lat ON (p.ID = pm_lat.post_id AND pm_lat.meta_key = '_city_latitude')
+         LEFT JOIN {$wpdb->postmeta} pm_lon ON (p.ID = pm_lon.post_id AND pm_lon.meta_key = '_city_longitude')
+         WHERE p.post_type = 'cities' AND p.post_status = 'publish'
+         ORDER BY p.post_title ASC
+     ";
 
       $cities = $wpdb->get_results($query);
+
 
       if ($cities) {
         foreach ($cities as $city) {
@@ -70,7 +71,7 @@ get_header(); ?>
 <?php get_footer(); ?>
 
 <script>
-  $(function() {
+  jQuery(document).ready(function($) {
     $("#search-city").on("keyup", function() {
       var query = $(this).val();
       $.ajax({

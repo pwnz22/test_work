@@ -257,3 +257,10 @@ function get_city_weather($lat, $lon)
   $data = json_decode(wp_remote_retrieve_body($response), true);
   return isset($data['main']['temp']) ? round($data['main']['temp'], 1) . "°C" : 'Нет данных';
 }
+
+// Загружаем jQuery
+function enqueue_custom_scripts()
+{
+  wp_enqueue_script('jquery');
+}
+add_action('wp_enqueue_scripts', 'enqueue_custom_scripts');
