@@ -1,0 +1,36 @@
+# Игнорируем файлы конфигурации
+wp-config.php
+wp-config-sample.php
+
+# Игнорируем папку с загрузками (зависит от проекта)
+wp-content/uploads/
+wp-content/upgrade/
+
+wp-content/plugins/
+wp-content/themes/*
+
+!wp-content/themes/storefront-child/
+
+# Игнорируем кэш и автогенерируемые файлы
+wp-content/cache/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+wp-content/debug.log
+
+# Игнорируем Composer/NPM-файлы
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+yarn.lock
+
+# Игнорируем системные файлы
+.DS_Store
+Thumbs.db
+*.log
+*.bak
+*.swp
+.idea/
+.vscode/
+.env
