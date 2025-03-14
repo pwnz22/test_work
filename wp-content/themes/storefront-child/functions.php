@@ -265,6 +265,16 @@ function enqueue_custom_scripts()
 }
 add_action('wp_enqueue_scripts', 'enqueue_custom_scripts');
 
+// Загружаем TailwindCSS на кастомную страницу
+function enqueue_cdn_for_custom_page()
+{
+  if (is_page_template('page-cities-weather.php')) {
+    wp_enqueue_script('tw-cdn', 'https://cdn.tailwindcss.com', array(), null, true);
+  }
+}
+add_action('wp_enqueue_scripts', 'enqueue_cdn_for_custom_page');
+
+
 // Формируем метод с фильтром по названию города
 function search_cities_ajax()
 {
@@ -309,3 +319,17 @@ function search_cities_ajax()
 // Регистрация action для авторизированных и неавторизированных пользователей
 add_action('wp_ajax_search_cities', 'search_cities_ajax');
 add_action('wp_ajax_nopriv_search_cities', 'search_cities_ajax');
+
+function register_custom_widget_area()
+{
+  register_sidebar(array(
+    'name'          => __('Виджеты для страницы городов', 'text_domain'),
+    'id'            => 'cities_custom_sidebar',
+    'description'   => __('Эта область виджетов отображается на странице с городами.', 'text_domain'),
+    'before_widget' => '<div class="widget-container">',
+    'after_widget'  => '</div>',
+    'before_title'  => '<h3 class="widget-title">',
+    'after_title'   => '</h3>',
+  ));
+}
+add_action('widgets_init', 'register_custom_widget_area');
