@@ -173,31 +173,12 @@ function enqueue_cdn_for_custom_page()
 }
 add_action('wp_enqueue_scripts', 'enqueue_cdn_for_custom_page');
 
-
 // Формируем метод с фильтром по названию города
 function search_cities_ajax()
 {
-  global $wpdb;
   $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
 
-  $sql = "
-      SELECT
-          p.ID,
-          p.post_title AS city_name,
-          t.name AS country_name,
-          pm_lat.meta_value AS latitude,
-          pm_lon.meta_value AS longitude
-      FROM {$wpdb->posts} p
-      LEFT JOIN {$wpdb->term_relationships} tr ON (p.ID = tr.object_id)
-      LEFT JOIN {$wpdb->term_taxonomy} tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id)
-      LEFT JOIN {$wpdb->terms} t ON (tt.term_id = t.term_id)
-      LEFT JOIN {$wpdb->postmeta} pm_lat ON (p.ID = pm_lat.post_id AND pm_lat.meta_key = '_city_latitude')
-      LEFT JOIN {$wpdb->postmeta} pm_lon ON (p.ID = pm_lon.post_id AND pm_lon.meta_key = '_city_longitude')
-      WHERE p.post_type = 'cities' AND p.post_status = 'publish' AND tt.taxonomy = 'countries'
-      AND p.post_title LIKE %s
-  ";
-
-  $cities = $wpdb->get_results($wpdb->prepare($sql, '%' . $query . '%'));
+  $cities = get_cities_list($query);
 
   if ($cities) {
     foreach ($cities as $city) {
@@ -232,3 +213,37 @@ function register_custom_widget_area()
   ));
 }
 add_action('widgets_init', 'register_custom_widget_area');
+
+// Функция получения и поиска городов
+function get_cities_list($search = '')
+{
+  global $wpdb;
+
+  // Базовый SQL-запрос
+  $query = "
+      SELECT
+          p.ID,
+          p.post_title AS city_name,
+          IFNULL(t.name, 'Без страны') AS country_name,
+          pm_lat.meta_value AS latitude,
+          pm_lon.meta_value AS longitude
+      FROM {$wpdb->posts} p
+      LEFT JOIN {$wpdb->term_relationships} tr ON (p.ID = tr.object_id)
+      LEFT JOIN {$wpdb->term_taxonomy} tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id AND tt.taxonomy = 'countries')
+      LEFT JOIN {$wpdb->terms} t ON (tt.term_id = t.term_id)
+      LEFT JOIN {$wpdb->postmeta} pm_lat ON (p.ID = pm_lat.post_id AND pm_lat.meta_key = '_city_latitude')
+      LEFT JOIN {$wpdb->postmeta} pm_lon ON (p.ID = pm_lon.post_id AND pm_lon.meta_key = '_city_longitude')
+      WHERE p.post_type = 'cities'
+      AND p.post_status = 'publish'
+    ";
+
+  // Если передана строка поиска, добавляем фильтр
+  if (!empty($search)) {
+    $query .= $wpdb->prepare(" AND p.post_title LIKE %s", '%' . $search . '%');
+  }
+
+  // Добавляем сортировку
+  $query .= " ORDER BY p.post_title ASC";
+
+  return $wpdb->get_results($query);
+}
