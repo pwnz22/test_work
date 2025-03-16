@@ -201,7 +201,7 @@ function search_cities_ajax()
 
   if ($cities) {
     foreach ($cities as $city) {
-      $temperature = get_city_weather($city->latitude, $city->longitude);
+      $temperature = get_weather_for_city($city->latitude, $city->longitude);
       echo "<tr>
               <td>{$city->country_name}</td>
               <td>{$city->city_name}</td>
