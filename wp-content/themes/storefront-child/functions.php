@@ -1,6 +1,7 @@
 <?php
+
 // Подключаем файл виджета
-require_once get_template_directory() . '-child/inc/cities-weather-widget.php';
+require_once get_stylesheet_directory() . '/inc/cities-weather-widget.php';
 
 // Подключаем стили родительской темы
 function storefront_child_enqueue_styles()
