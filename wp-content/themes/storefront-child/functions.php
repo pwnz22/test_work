@@ -1,4 +1,6 @@
 <?php
+// Подключаем файл виджета
+require_once get_template_directory() . '-child/inc/cities-weather-widget.php';
 
 // Подключаем стили родительской темы
 function storefront_child_enqueue_styles()
@@ -131,106 +133,6 @@ function create_countries_taxonomy()
 }
 add_action('init', 'create_countries_taxonomy');
 
-// Виджет для вывода погоды
-class Cities_Weather_Widget extends WP_Widget
-{
-
-  function __construct()
-  {
-    parent::__construct(
-      'cities_weather_widget',
-      __('Город и Погода', 'text_domain'),
-      array('description' => __('Показывает выбранный город и его погоду', 'text_domain'))
-    );
-  }
-
-  // Формирование интерфейса виджета на фронтенде
-  public function widget($args, $instance)
-  {
-    $city_id = !empty($instance['city_id']) ? $instance['city_id'] : '';
-    $api_key = defined('OPENWEATHERMAP_API_KEY') ? OPENWEATHERMAP_API_KEY : '';
-
-    if ($city_id) {
-      $city_name = get_the_title($city_id);
-      $latitude = get_post_meta($city_id, '_city_latitude', true);
-      $longitude = get_post_meta($city_id, '_city_longitude', true);
-
-      if ($latitude && $longitude) {
-        $weather_data = $this->get_weather_data($latitude, $longitude, $api_key);
-
-        echo $args['before_widget'];
-        echo $args['before_title'] . esc_html($city_name) . $args['after_title'];
-
-        if ($weather_data) {
-          echo '<p>Температура: ' . esc_html($weather_data['temp']) . '°C</p>';
-        } else {
-          echo '<p>Не удалось получить данные о погоде.</p>';
-        }
-
-        echo $args['after_widget'];
-      } else {
-        echo '<p>Геоданные не заданы.</p>';
-      }
-    }
-  }
-
-  // Обработка API-запроса к OpenWeatherMap
-  private function get_weather_data($lat, $lon, $api_key)
-  {
-    $api_url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$api_key";
-
-    $response = wp_remote_get($api_url);
-    if (is_wp_error($response)) {
-      return false;
-    }
-
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
-
-    if (isset($data['main']['temp'])) {
-      return array(
-        'temp' => round($data['main']['temp'], 1),
-      );
-    }
-
-    return false;
-  }
-
-  // Форма настроек виджета в админке
-  public function form($instance)
-  {
-    $city_id = !empty($instance['city_id']) ? $instance['city_id'] : '';
-
-    // Получаем список всех городов Cities
-    $cities = get_posts(array(
-      'post_type' => 'cities',
-      'numberposts' => -1
-    ));
-?>
-
-    <p>
-      <label for="<?php echo $this->get_field_id('city_id'); ?>">Выберите город:</label>
-      <select id="<?php echo $this->get_field_id('city_id'); ?>" name="<?php echo $this->get_field_name('city_id'); ?>">
-        <?php foreach ($cities as $city) : ?>
-          <option value="<?php echo esc_attr($city->ID); ?>" <?php selected($city_id, $city->ID); ?>>
-            <?php echo esc_html($city->post_title); ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-    </p>
-
-<?php
-  }
-
-  // Сохранение настроек виджета
-  public function update($new_instance, $old_instance)
-  {
-    $instance = array();
-    $instance['city_id'] = (!empty($new_instance['city_id'])) ? strip_tags($new_instance['city_id']) : '';
-    return $instance;
-  }
-}
-
 // Регистрируем виджет
 function register_cities_weather_widget()
 {
@@ -239,23 +141,19 @@ function register_cities_weather_widget()
 add_action('widgets_init', 'register_cities_weather_widget');
 
 // Функция для получения погоды
-function get_city_weather($lat, $lon)
+function get_weather_for_city($lat, $lon)
 {
-  $api_key = defined('OPENWEATHERMAP_API_KEY') ? OPENWEATHERMAP_API_KEY : '';
-
-  if (!$api_key || !$lat || !$lon) {
-    return 'API ключ или координаты пустые.';
+  if (!$lat || !$lon) {
+    return 'Нет данных';
   }
 
-  $api_url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$api_key";
-  $response = wp_remote_get($api_url);
+  // Создаём экземпляр виджета
+  $weather_widget = new Cities_Weather_Widget();
 
-  if (is_wp_error($response)) {
-    return 'Ошибка...';
-  }
+  // Вызываем метод get_weather_data() внутри класса
+  $weather_data = $weather_widget->get_weather_data($lat, $lon);
 
-  $data = json_decode(wp_remote_retrieve_body($response), true);
-  return isset($data['main']['temp']) ? round($data['main']['temp'], 1) . "°C" : 'Нет данных';
+  return is_array($weather_data) && isset($weather_data['temp']) ? $weather_data['temp'] . '°C' : 'Нет данных';
 }
 
 // Загружаем jQuery
